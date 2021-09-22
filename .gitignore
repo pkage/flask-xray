@@ -1,0 +1,5 @@
+__pycache__/
+env_*/
+done/
+jobs/
+.DS_Store

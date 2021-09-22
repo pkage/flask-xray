@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>flask task</title>
+    </head>
+    <body>
+        <h1>flask_task</h1>
+
+        <p>Available jobs: {{ jobs|length }}</p>
+
+        <ul>
+            {% for job in jobs %}
+            <li>
+                <span>{{ job.name }} </span>
+                <span>
+                    {% if job.complete %}
+                        (<a download href="/job/download/{{ job.name }}">done</a>)
+                    {% else %}
+                        (running)
+                    {% endif %}
+                </span>
+
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <hr>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+            action="/job/new">
+            <input
+                required
+                type="text"
+                name="name"
+                placeholder="job name">
+            <input
+                required
+                type="file"
+                name="jobfile">
+
+            <button type="submit">Submit</button>
+            
+        </form>
+
+    </body>
+</html>
