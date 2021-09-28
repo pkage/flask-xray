@@ -110,11 +110,18 @@ def upload_job():
     return redirect('/')
 
 @app.route('/job/download/<job_name>')
-def download_job(job_name):
+def job_download(job_name):
     # zip up job folder
     zipname = zip_job_folder(job_name)
 
     return send_file(zipname, mimetype='application/zip')
+
+@app.route('/job/status/<job_name>')
+def job_status(job_name):
+    # check the status of a job
+    complete = check_job_complete(job)
+
+    return 'complete' if complete else 'pending'
 
 if __name__=='__main__':
     app.run(debug=True, host='0.0.0.0')
