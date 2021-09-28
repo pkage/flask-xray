@@ -119,7 +119,7 @@ def job_download(job_name):
 @app.route('/job/status/<job_name>')
 def job_status(job_name):
     # check the status of a job
-    complete = check_job_complete(job)
+    complete = check_job_complete(job_name)
 
     return 'complete' if complete else 'pending'
 
