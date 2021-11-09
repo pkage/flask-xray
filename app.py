@@ -43,7 +43,7 @@ def create_dirs(dirs):
 
 def get_time():
     now = datetime.now()
-    return now.strftime('%b %d %y %I:%M:%S %p')
+    return now.strftime('%b %d %y %I%M%S %p')
 
 def get_date():
     now = datetime.now()
@@ -53,7 +53,7 @@ def get_date():
 # --- BUSINESS LOGIC ---
 
 def process_ingest(cfg):
-    for filename in os.listdir(cfg['dirs']['input']):
+    for filename in listdir(cfg['dirs']['input']):
         new_filename = get_time() + ' - ' + filename
 
         shutil.move(
@@ -68,7 +68,7 @@ def process_ingest(cfg):
         )
 
 def process_letters(cfg):
-    for filename in os.listdir(cfg['dirs']['letters']):
+    for filename in listdir(cfg['dirs']['letters']):
         shutil.move(
             os.path.join(
                 cfg['dirs']['letters'],
@@ -89,7 +89,7 @@ def process_historical(cfg):
     if not os.path.exists(historical_folder):
         os.mkdir(historical_folder)
 
-    for filename in os.listdir(cfg['dirs']['annotated']):
+    for filename in listdir(cfg['dirs']['annotated']):
         shutil.move(
             os.path.join(
                 cfg['dirs']['annotated'],
