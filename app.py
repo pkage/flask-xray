@@ -53,7 +53,7 @@ def get_date():
 # --- BUSINESS LOGIC ---
 
 def process_ingest(cfg):
-    for filename in listdir(cfg['dirs']['input']):
+    for filename in list_dir(cfg['dirs']['input']):
         new_filename = get_time() + ' - ' + filename
 
         shutil.move(
@@ -68,7 +68,7 @@ def process_ingest(cfg):
         )
 
 def process_letters(cfg):
-    for filename in listdir(cfg['dirs']['letters']):
+    for filename in list_dir(cfg['dirs']['letters']):
         shutil.move(
             os.path.join(
                 cfg['dirs']['letters'],
@@ -89,7 +89,7 @@ def process_historical(cfg):
     if not os.path.exists(historical_folder):
         os.mkdir(historical_folder)
 
-    for filename in listdir(cfg['dirs']['annotated']):
+    for filename in list_dir(cfg['dirs']['annotated']):
         shutil.move(
             os.path.join(
                 cfg['dirs']['annotated'],
