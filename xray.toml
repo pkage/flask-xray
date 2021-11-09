@@ -1,0 +1,11 @@
+# xray toml
+
+[app]
+serve_port = 8080
+
+[dirs]
+input      = "./test/input"
+letters    = "./test/letters"
+annotated  = "./test/annotated"
+historical = "./test/historical"
+

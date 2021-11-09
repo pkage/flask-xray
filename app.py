@@ -1,127 +1,161 @@
-from flask import Flask, render_template, request, redirect, send_file
+from flask import Flask, render_template, request, redirect, send_file, jsonify
 from werkzeug.utils import secure_filename
 import os
 import shutil
+from datetime import datetime
+
+import toml
 
 app = Flask(__name__)
-JOBS_DIR = './jobs'
-DONE_DIR = './done'
-
-# --- EXTEND HERE ---
-
-def start_job(job_dir, job_file):
-    # TODO: start your job
-    # subprocess is a tool for this
-    import subprocess
-    subprocess.run(['echo', 'Hello from the job file'])
-
-# we'll need some way for checking that jobs are complete
-def check_job_complete(job_name):
-    return os.path.exists(
-        os.path.join(JOBS_DIR, job_name, 'done.txt')
-    )
-
+CONFIG_FILE = '~/.config/xray/xray.toml'
 
 # --- HELPERS ---
 
+def get_config_text():
+    cfg = open(
+        os.path.expanduser(CONFIG_FILE), 'r'
+    ).read()
+    return cfg
 
-# Some setup: we'll need to know how many folders are in the jobs folder
-def get_all_jobs():
-    return os.listdir(JOBS_DIR)
+def get_config():
+    return toml.loads(get_config_text())
 
+def list_dir(directory):
+    return os.listdir(directory)
 
-# create a new folder for a job
-def create_job_dir(job_name):
-    directory = os.path.join(JOBS_DIR, job_name)
-    os.mkdir(directory)
-    return directory
+def create_dirs(dirs):
+    # input directory
+    if not os.path.exists(dirs['input']):
+        os.mkdir(dirs['input'])
 
+    # letters directory
+    if not os.path.exists(dirs['letters']):
+        os.mkdir(dirs['letters'])
 
-# zip up a job folder when it's done
-def zip_job_folder(job_name):
-    # locate the folder
-    job_dir = os.path.join(JOBS_DIR, job_name)
+    # annotated directory
+    if not os.path.exists(dirs['annotated']):
+        os.mkdir(dirs['annotated'])
 
-    # figure out where we'll save it
-    output_filename = os.path.join(DONE_DIR, job_name)
+    # historical directory
+    if not os.path.exists(dirs['historical']):
+        os.mkdir(dirs['historical'])
 
-    # check if we've already done it, if so don't redo work
-    if not os.path.exists(output_filename + '.zip'):
-        # make the zip file
-        shutil.make_archive(output_filename, 'zip', job_dir)
+def get_time():
+    now = datetime.now()
+    return now.strftime('%b %d %y %I:%M:%S %p')
 
-    return output_filename + '.zip'
-
-
-
-# A quick function to make sure the folders exist
-# if they do, nothing happens
-# if they don't, they're created
-def folder_setup():
-    if not os.path.exists(JOBS_DIR):
-        os.mkdir(JOBS_DIR)
-    if not os.path.exists(DONE_DIR):
-        os.mkdir(DONE_DIR)
+def get_date():
+    now = datetime.now()
+    return now.strftime('%b %d %y')
 
 
-# --- WEB SERVER ---
+# --- BUSINESS LOGIC ---
 
-# Here, we'll implement our index page
-# This will show all the jobs we're currently keeping track of
-# and their completion status
-@app.route('/')
-def index():
-    folder_setup()
+def process_ingest(cfg):
+    for filename in os.listdir(cfg['dirs']['input']):
+        new_filename = get_time() + ' - ' + filename
 
-    jobs = []
-    for job in get_all_jobs():
-        job_obj = {
-            'name': job,
-            'complete': check_job_complete(job) # shorthand, is True or False
-        }
-        jobs.append(job_obj)
+        shutil.move(
+            os.path.join(
+                cfg['dirs']['input'],
+                filename
+            ),
+            os.path.join(
+                cfg['dirs']['letters'],
+                new_filename
+            )
+        )
 
-    return render_template(
-        'index.html',
-        jobs=jobs
+def process_letters(cfg):
+    for filename in os.listdir(cfg['dirs']['letters']):
+        shutil.move(
+            os.path.join(
+                cfg['dirs']['letters'],
+                filename
+            ),
+            os.path.join(
+                cfg['dirs']['annotated'],
+                filename
+            )
+        )
+
+def process_historical(cfg):
+    historical_folder = os.path.join(
+        cfg['dirs']['historical'],
+        get_date()
     )
 
+    if not os.path.exists(historical_folder):
+        os.mkdir(historical_folder)
 
-# Create a new job
-@app.route('/job/new', methods=['POST'])
-def upload_job():
-    # get the job name from the request
-    job_name = request.form['name']
-    job_name = secure_filename(job_name)
+    for filename in os.listdir(cfg['dirs']['annotated']):
+        shutil.move(
+            os.path.join(
+                cfg['dirs']['annotated'],
+                filename
+            ),
+            os.path.join(
+                historical_folder,
+                filename
+            )
+        )
 
-    # initialize the directory
-    job_dir = create_job_dir(job_name)
 
-    # get the file (there should be only one)
-    jobfile = request.files['jobfile']
-    filename = secure_filename(jobfile.filename)
+@app.get('/')
+def index():
+    cfg = get_config()
+    return render_template(
+            'index.html',
+            inputs=list_dir(cfg['dirs']['input']),
+            letters=list_dir(cfg['dirs']['letters']),
+            annotated=list_dir(cfg['dirs']['annotated']),
+            historical=list_dir(cfg['dirs']['historical']),
+            config=get_config_text(),
+            render_time=get_time()
+    )
 
-    # save to the directory
-    jobfile.save(os.path.join(job_dir, filename))
+@app.get('/api/ingest')
+def api_ingest():
+    cfg = get_config()
+    process_ingest(cfg)
+    return jsonify({'ok': True})
 
-    # kick off the job
-    start_job(job_dir, filename)
+@app.get('/api/letters')
+def api_letters():
+    cfg = get_config()
+    process_letters(cfg)
+    return jsonify({'ok': True})
 
+@app.get('/api/historical')
+def api_historical():
+    cfg = get_config()
+    process_historical(cfg)
+    return jsonify({'ok': True})
+
+
+@app.get('/action/ingest')
+def action_ingest():
+    cfg = get_config()
+    process_ingest(cfg)
     return redirect('/')
 
-@app.route('/job/download/<job_name>')
-def job_download(job_name):
-    # zip up job folder
-    zipname = zip_job_folder(job_name)
+@app.get('/action/letters')
+def action_letters():
+    cfg = get_config()
+    process_letters(cfg)
+    return redirect('/')
 
-    return send_file(zipname, mimetype='application/zip')
+@app.get('/action/historical')
+def action_historical():
+    cfg = get_config()
+    process_historical(cfg)
+    return redirect('/')
 
-@app.route('/job/status/<job_name>')
-def job_status(job_name):
-    # check the status of a job
-    complete = check_job_complete(job_name)
-
-    return 'complete' if complete else 'pending'
 
 if __name__=='__main__':
-    app.run(debug=True, host='0.0.0.0')
+
+    cfg = get_config()
+    create_dirs(cfg['dirs'])
+
+
+    app.run(debug=True, host='0.0.0.0', port=cfg['app']['serve_port'])

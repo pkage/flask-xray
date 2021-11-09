@@ -1,0 +1,28 @@
+
+
+.dashboard {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+
+footer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+
+}
+
+hr {
+    margin-top: 2em;
+}
+
+summary {
+    cursor: pointer;
+}
+
+.flush_button {
+}

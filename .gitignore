@@ -1,5 +1,5 @@
 __pycache__/
 env_*/
-done/
-jobs/
+test/
+*.pdf
 .DS_Store

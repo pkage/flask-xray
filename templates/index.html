@@ -1,49 +1,72 @@
 <!DOCTYPE html>
 
+{% macro listing(files, name) -%}
+{% if files|length == 0 %}
+<p>
+<i> no {{ name }} to show </i>
+</p>
+{% else %}
+<ul>
+{% for f in files %}
+    <li>{{ f }}</li>
+{% endfor %}
+{% endif %}
+</ul>
+{% endmacro %}
+
 <html>
     <head>
-        <title>flask task</title>
+        <title>xray manager</title>
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+        
     </head>
     <body>
-        <h1>flask_task</h1>
+        <h1>xray manager</h1>
 
-        <p>Available jobs: {{ jobs|length }}</p>
-
-        <ul>
-            {% for job in jobs %}
-            <li>
-                <span>{{ job.name }} </span>
-                <span>
-                    {% if job.complete %}
-                        (<a download href="/job/download/{{ job.name }}">done</a>)
-                    {% else %}
-                        (running)
-                    {% endif %}
-                </span>
-
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="dashboard">
+            <div>
+                <h2>input queue</h2>
+                {{ listing(inputs, 'inputs') }}
+                <div class="flush_button">
+                    <a href="/action/ingest">flush &rarr;</a>
+                </div>
+            </div>
+            <div>
+                <h2>awaiting annotation</h2>
+                {{ listing(letters, 'letters') }}
+                <div class="flush_button">
+                    <a href="/action/letters">flush &rarr;</a>
+                </div>
+            </div>
+            <div>
+                <h2>annotated</h2>
+                {{ listing(annotated, 'annotated letters') }}
+                <div class="flush_button">
+                    <a href="/action/historical">flush &rarr;</a>
+                </div>
+                
+            </div>
+            <div>
+                <h2>historical</h2>
+                {{ listing(historical, 'historical letters') }}
+            </div>
+        </div>
         
+
         <hr>
 
-        <form
-            method="POST"
-            enctype="multipart/form-data"
-            action="/job/new">
-            <input
-                required
-                type="text"
-                name="name"
-                placeholder="job name">
-            <input
-                required
-                type="file"
-                name="jobfile">
+        <footer>
+            <details>
+                <summary>server config</summary>
+                <pre>{{ config }}</pre>
+            </details>
 
-            <button type="submit">Submit</button>
-            
-        </form>
+            <i>
+                {{ render_time }}
+            </i>
+        </footer>
+        
 
     </body>
 </html>

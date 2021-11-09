@@ -1,5 +1,6 @@
 # server
 Flask
+toml
 
 # client
 requests
