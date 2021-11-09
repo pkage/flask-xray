@@ -21,7 +21,8 @@ def get_config():
     return toml.loads(get_config_text())
 
 def list_dir(directory):
-    return os.listdir(directory)
+    filtered = filter(lambda x: not x.startswith('.'), os.listdir(directory))
+    return list(filtered)
 
 def create_dirs(dirs):
     # input directory
